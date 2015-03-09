@@ -47,7 +47,6 @@ class ZBX
       end
       data << {:id => h['hostid'], :name => h['name'], :interface => interface, :status => status}
     end
-    # p data.first
     Formatador.display_compact_table(data, [:id, :name, :interface, :status])
     data
   end
@@ -101,6 +100,28 @@ class ZBX
     end
   end
 
+  def template_list(templateid)
+    if templateid == "all"
+      templatelist = @zabbix.template.get
+    else
+      templatelist = @zabbix.template.get(
+        :templateids => templateid
+      )
+    end
+    data = Array.new
+    templatelist.each do | t|
+      data << {:id => t['templateid'], :name => t['name']}
+    end
+    if data.length == 0
+      msg = "TemplateID #{templateid} not found.\n"
+      puts msg
+      msg
+    else
+      Formatador.display_compact_table(data, [:id, :name])
+      data
+    end
+
+  end
 
 
 end
@@ -120,7 +141,11 @@ case opt1
 when "host"
   case opt2
   when "list"
-    ZBX.new.host_list("all")
+    if(!opt3)
+      ZBX.new.host_list("all")
+    else
+      ZBX.new.host_list(opt3)
+    end
   when "enable"
     print_host_usage if(!opt3)
     ZBX.new.host_enable(opt3)
@@ -132,5 +157,14 @@ when "host"
     ZBX.new.host_delete(opt3)
   else
     print_host_usage
+  end
+when "template"
+  case opt2
+  when "list"
+    if(!opt3)
+      ZBX.new.template_list("all")
+    else
+      ZBX.new.template_list(opt3)
+    end
   end
 end
