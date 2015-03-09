@@ -1,6 +1,8 @@
 require 'json'
 require 'zabbix/client'
 require "formatador"
+require 'rexml/document'
+require 'rexml/formatters/pretty'
 require 'pp'
 
 HOST = ENV['ZBXHOST'] ? ENV['ZBXHOST'] : "127.0.0.1"
@@ -134,6 +136,110 @@ class ZBX
     end
   end
 
+  def template_export(templateid)
+    template = @zabbix.template.get(
+      :templateids => templateid,
+      :output => "extend"
+    )
+    if template.length == 0
+      msg = "TemplateID #{templateid} not found.\n"
+      puts msg
+      msg
+    else
+      template_filename = template[0]["host"] + ".xml"
+
+      template_xml = @zabbix.configuration.export(
+        :options => { :templates => [templateid] },
+        :format => 'xml'
+      )
+
+      xml = REXML::Document.new template_xml
+      formatter = REXML::Formatters::Pretty.new
+      formatter.compact = true
+
+      begin
+        File.open(template_filename ,"w"){|file| file.puts formatter.write(xml.root,"")}
+        puts "export to #{template_filename}"
+      rescue => e
+        puts "Failed export to #{template_filename}"
+        puts e
+        exit
+      end
+    end
+  end
+
+  def template_import(template_file)
+    begin
+      template = File.read("#{template_file}")
+    rescue => e
+      puts "Failed import #{template_file}"
+      puts e
+      exit
+    end
+    begin
+      @zabbix.configuration.import(
+      :rules => {
+        :applications => {
+          :createMissing => true,
+          :updateExisting => true
+        },
+        :discoveryRules => {
+          :createMissing => true,
+          :updateExisting => true
+        },
+        :graphs  => {
+          :createMissing => true,
+          :updateExisting => true
+        },
+        :groups => {
+          :createMissing => true,
+        },
+        :hosts => {
+          :createMissing => true,
+          :updateExisting => true
+        },
+        :images => {
+          :createMissing => true,
+          :updateExisting => true
+        },
+        :items => {
+          :createMissing => true,
+          :updateExisting => true
+        },
+        :maps => {
+          :createMissing => true,
+          :updateExisting => true
+        },
+        :screens => {
+          :createMissing => true,
+          :updateExisting => true
+        },
+        :templateLinkage => {
+          :createMissing => true,
+        },
+        :templates => {
+          :createMissing => true,
+          :updateExisting => true
+        },
+        :templateScreens => {
+          :createMissing => true,
+          :updateExisting => true
+        },
+        :triggers => {
+          :createMissing => true,
+          :updateExisting => true,
+          :deleteMissing => true
+        }
+      },
+      :source => template,
+      :format => 'xml'
+      )
+      puts "Import #{template_file} successful."
+    rescue => e
+      puts "Failed import #{template_file}"
+    end
+  end
+
   def group_list(groupid)
     if groupid == "all"
       grouplist = @zabbix.hostgroup.get
@@ -159,11 +265,32 @@ end
 
 def print_host_usage
   puts <<-EOS
-  Usage :
+Usage :
   #{$0} host list
+  #{$0} host list (HOSTID)
   #{$0} host enable (HOSTID)
   #{$0} host disable (HOSTID)
   #{$0} host delete (HOSTID)
+  EOS
+  exit
+end
+
+def print_template_usage
+  puts <<-EOS
+Usage :
+  #{$0} template list
+  #{$0} template list (TEMPALTEID)
+  #{$0} template export (TEMPALTEID)
+  #{$0} template import (TEMPLATE FILENAME)
+  EOS
+  exit
+end
+
+def print_group_usage
+  puts <<-EOS
+Usage :
+  #{$0} group list
+  #{$0} group list (GROUPID)
   EOS
   exit
 end
@@ -189,6 +316,7 @@ when "host"
   else
     print_host_usage
   end
+
 when "template"
   case opt2
   when "list"
@@ -197,7 +325,16 @@ when "template"
     else
       ZBX.new.template_list(opt3)
     end
+  when "export"
+    print_template_usage if(!opt3)
+    ZBX.new.template_export(opt3)
+  when "import"
+    print_template_usage if(!opt3)
+    ZBX.new.template_import(opt3)
+  else
+    print_template_usage
   end
+
 when "group"
   case opt2
   when "list"
@@ -206,5 +343,7 @@ when "group"
     else
       ZBX.new.group_list(opt3)
     end
+  else
+    print_group_usage
   end
 end
