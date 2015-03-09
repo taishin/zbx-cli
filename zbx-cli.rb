@@ -27,28 +27,39 @@ class ZBX
   def host_list(hostid)
     if hostid == "all"
       hostlist = @zabbix.host.get(
-      :output => "extend"
-      )
+      :output => "extend",
+      :selectGroups => "extend",
+      :selectParentTemplates => ["templateid"]
+    )
     else
       hostlist = @zabbix.host.get(
       :hostids => hostid,
-      :output => "extend"
+      :output => "extend",
+      :selectGroups => "extend",
+      :selectParentTemplates => ["templateid"]
       )
     end
 
     data = Array.new
 
-    hostlist.each do | h|
+    hostlist.each do |h|
       interface = @zabbix.hostinterface.get(hostid: h['hostid']).first['ip']
       if h['status'] == "1"
         status = "disable"
       elsif h['status'] == "0"
         status = "enable"
       end
-      data << {:id => h['hostid'], :name => h['name'], :interface => interface, :status => status}
+      groups = Array.new
+      h['groups'].each do |g|
+        groups << g['groupid'].to_i
+      end
+      templates = Array.new
+      h['parentTemplates'].each do |t|
+        templates << t['templateid'].to_i
+      end
+      data << {:id => h['hostid'], :name => h['name'], :group => groups, :interface => interface, :status => status, :template => templates}
     end
-    Formatador.display_compact_table(data, [:id, :name, :interface, :status])
-    data
+    Formatador.display_compact_table(data, [:id, :name, :group, :interface, :status, :template])
   end
 
   def host_enable(hostid)
