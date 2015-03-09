@@ -55,5 +55,28 @@ describe 'zabbix-cli' do
     end
   end
 
+  describe 'action' do
+    let(:exist_actionid) { 3 }
+    let(:non_exist_actionid) { 100 }
+
+    describe 'enable action' do
+      it "when ActionID is exists" do
+        expect(zbx.action_enable(exist_actionid).first[:status]).to eq "enable"
+      end
+      it "when ActionID is not exists" do
+        expect(zbx.action_enable(non_exist_actionid)).to match(/ActionID #{non_exist_actionid} not found\./)
+      end
+    end
+
+    describe 'disable action' do
+      it "when ActionID is exists" do
+        expect(zbx.action_disable(exist_actionid).first[:status]).to eq "disable"
+      end
+      it "when ActionID is not exists" do
+        expect(zbx.action_disable(non_exist_actionid)).to match(/ActionID #{non_exist_actionid} not found\./)
+      end
+    end
+  end
+
 
 end

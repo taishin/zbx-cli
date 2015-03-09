@@ -261,6 +261,69 @@ class ZBX
       data
     end
   end
+
+  def action_list(actionid)
+    if actionid == "all"
+      actionlist = @zabbix.action.get
+    else
+      actionlist = @zabbix.action.get(
+        :actionids => actionid
+      )
+    end
+
+    data = Array.new
+
+    actionlist.each do |a|
+      if a['status'] == "1"
+        status = "disable"
+      elsif a['status'] == "0"
+        status = "enable"
+      end
+
+      case a['eventsource']
+      when "0"
+        eventsource = "Trigger"
+      when "1"
+        eventsource = "Discover"
+      when "2"
+        eventsource = "Auto Registration"
+      when "3"
+        eventsource = "Internal Event"
+      end
+
+      data << {:id => a['actionid'], :name => a['name'], :eventsource => eventsource, :status => status}
+    end
+    Formatador.display_compact_table(data, [:id, :name, :eventsource, :status])
+    data
+  end
+
+  def action_enable(actionid)
+    begin
+      @zabbix.action.update(
+        :actionid => actionid,
+        :status => "0"
+      )
+      action_list(actionid)
+    rescue => e
+      msg = "ActionID #{actionid} not found.\n #{e}"
+      puts msg
+      msg
+    end
+  end
+
+  def action_disable(actionid)
+    begin
+      @zabbix.action.update(
+        :actionid => actionid,
+        :status => "1"
+      )
+      action_list(actionid)
+    rescue => e
+      msg = "ActionID #{actionid} not found.\n #{e}"
+      puts msg
+      msg
+    end
+  end
 end
 
 def print_host_usage
@@ -291,6 +354,17 @@ def print_group_usage
 Usage :
   #{$0} group list
   #{$0} group list (GROUPID)
+  EOS
+  exit
+end
+
+def print_action_usage
+  puts <<-EOS
+Usage :
+  #{$0} action list
+  #{$0} action list (ACTIONID)
+  #{$0} action enable (ACTIONID)
+  #{$0} action disable (ACTIONID)
   EOS
   exit
 end
@@ -345,5 +419,23 @@ when "group"
     end
   else
     print_group_usage
+  end
+
+when "action"
+  case opt2
+  when "list"
+    if(!opt3)
+      ZBX.new.action_list("all")
+    else
+      ZBX.new.action_list(opt3)
+    end
+  when "enable"
+    print_action_usage if(!opt3)
+    ZBX.new.action_enable(opt3)
+  when "disable"
+    print_action_usage if(!opt3)
+    ZBX.new.action_disable(opt3)
+  else
+    print_action_usage
   end
 end
