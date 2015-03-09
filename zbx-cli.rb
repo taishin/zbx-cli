@@ -60,6 +60,7 @@ class ZBX
       data << {:id => h['hostid'], :name => h['name'], :group => groups, :interface => interface, :status => status, :template => templates}
     end
     Formatador.display_compact_table(data, [:id, :name, :group, :interface, :status, :template])
+    data
   end
 
   def host_enable(hostid)
@@ -120,7 +121,7 @@ class ZBX
       )
     end
     data = Array.new
-    templatelist.each do | t|
+    templatelist.each do |t|
       data << {:id => t['templateid'], :name => t['name']}
     end
     if data.length == 0
@@ -131,10 +132,29 @@ class ZBX
       Formatador.display_compact_table(data, [:id, :name])
       data
     end
-
   end
 
-
+  def group_list(groupid)
+    if groupid == "all"
+      grouplist = @zabbix.hostgroup.get
+    else
+      grouplist = @zabbix.hostgroup.get(
+        :groupids => groupid
+      )
+    end
+    data = Array.new
+    grouplist.each do |g|
+      data << {:id => g['groupid'], :name => g['name']}
+    end
+    if data.length == 0
+      msg = "GroupID #{groupid} not found.\n"
+      puts msg
+      msg
+    else
+      Formatador.display_compact_table(data, [:id, :name])
+      data
+    end
+  end
 end
 
 def print_host_usage
@@ -176,6 +196,15 @@ when "template"
       ZBX.new.template_list("all")
     else
       ZBX.new.template_list(opt3)
+    end
+  end
+when "group"
+  case opt2
+  when "list"
+    if(!opt3)
+      ZBX.new.group_list("all")
+    else
+      ZBX.new.group_list(opt3)
     end
   end
 end

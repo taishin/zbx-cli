@@ -40,4 +40,20 @@ describe 'zabbix-cli' do
       end
     end
   end
+
+  describe 'group' do
+    let(:exist_groupid) { 1 }
+    let(:non_exist_groupid) { 10000 }
+
+    describe "list group" do
+      it "when GroupID is exists" do
+        expect(zbx.group_list(exist_groupid).first[:name]).to eq "Templates"
+      end
+      it "when GroupID is not exists" do
+        expect(zbx.group_list(non_exist_groupid)).to eq "GroupID #{non_exist_groupid} not found.\n"
+      end
+    end
+  end
+
+
 end
