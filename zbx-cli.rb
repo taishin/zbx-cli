@@ -116,10 +116,13 @@ class ZBX
 
   def template_list(templateid)
     if templateid == "all"
-      templatelist = @zabbix.template.get
+      templatelist = @zabbix.template.get(
+        :output => "extend"
+      )
     else
       templatelist = @zabbix.template.get(
-        :templateids => templateid
+        :templateids => templateid,
+        :output => "extend"
       )
     end
     data = Array.new
@@ -237,15 +240,19 @@ class ZBX
       puts "Import #{template_file} successful."
     rescue => e
       puts "Failed import #{template_file}"
+      # puts e
     end
   end
 
   def group_list(groupid)
     if groupid == "all"
-      grouplist = @zabbix.hostgroup.get
+      grouplist = @zabbix.hostgroup.get(
+        :output => "extend"
+      )
     else
       grouplist = @zabbix.hostgroup.get(
-        :groupids => groupid
+        :groupids => groupid,
+        :output => "extend"
       )
     end
     data = Array.new
@@ -264,10 +271,13 @@ class ZBX
 
   def action_list(actionid)
     if actionid == "all"
-      actionlist = @zabbix.action.get
+      actionlist = @zabbix.action.get(
+        :output => "extend"
+      )
     else
       actionlist = @zabbix.action.get(
-        :actionids => actionid
+        :actionids => actionid,
+        :output => "extend"
       )
     end
 
