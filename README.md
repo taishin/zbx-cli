@@ -1,7 +1,4 @@
-Name
-====
-
-Overview
+# zbxi-cli.rb
 
 ## Description
 
