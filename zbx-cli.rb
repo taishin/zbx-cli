@@ -336,6 +336,17 @@ class ZBX
   end
 end
 
+def print_usage
+  puts <<-EOS
+Usage :
+  #{$0} host help
+  #{$0} template help
+  #{$0} group help
+  #{$0} action help
+  EOS
+  exit
+end
+
 def print_host_usage
   puts <<-EOS
 Usage :
@@ -448,4 +459,7 @@ when "action"
   else
     print_action_usage
   end
+
+else
+  print_usage
 end
